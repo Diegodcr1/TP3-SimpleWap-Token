@@ -1,0 +1,82 @@
+
+🧩 ¿Qué hace SimpleSwap2?
+Es un contrato inteligente estilo DEX (exchange descentralizado) que permite:
+
+Agregar liquidez entre dos tokens ERC20.
+
+Hacer swaps entre dos tokens.
+
+Retirar liquidez y recibir los tokens originales.
+
+Consultar precios actuales y calcular cantidades estimadas de salida.
+
+🔌 Interacciones Clave para el Frontend
+1. Agregar Liquidez (addLiquidity)
+Permite depositar dos tokens (A y B) y recibir un token LP representando la participación.
+
+Inputs esperados del usuario:
+
+Montos deseados de tokenA y tokenB.
+
+Mínimos aceptables (para proteger contra slippage).
+
+Dirección destino (to, normalmente el wallet del usuario).
+
+Fecha límite (deadline en timestamp UNIX).
+
+> 💡 Antes de llamar a addLiquidity, el usuario debe aprobar (approve) el contrato para mover sus tokens.
+
+2. Quitar Liquidez (removeLiquidity)
+Intercambia los tokens LP que el usuario posee por los tokens A y B subyacentes del pool.
+
+Inputs esperados:
+
+Par de tokens (tokenA y tokenB).
+
+Cantidad de tokens LP que quiere quemar.
+
+Mínimos aceptables de retiro.
+
+Dirección receptora.
+
+deadline.
+
+> 💡 También requiere aprobación previa si el frontend gestiona los LP tokens.
+
+3. Hacer un Swap (swapExactTokensForTokens)
+Permite cambiar una cantidad fija de un token por la mejor cantidad posible del otro, controlando slippage.
+
+Inputs clave:
+
+tokenIn y tokenOut.
+
+amountIn: cuánto desea intercambiar.
+
+amountOutMin: mínimo que acepta recibir.
+
+to: dirección que recibirá el tokenOut.
+
+deadline.
+
+> 💡 El frontend debe mostrar estimaciones y confirmar con el usuario antes de enviar la transacción.
+
+4. Consultar Precios (getPrice)
+Calcula el valor relativo entre dos tokens según sus reservas.
+
+🟢 Ideal para:
+
+Mostrar en el frontend antes de un swap.
+
+Hacer gráficos o informes de tasa de cambio.
+
+5. Simular Swap (getAmountOut)
+Devuelve la cantidad estimada de salida para un amountIn sin ejecutar un swap real.
+
+🟢 Ideal para:
+
+Previsualizar los resultados de un swap sin costo de gas.
+
+Calcular slippage en tiempo real.
+
+🔐 Funciones Internas
+sqrt: calcula la raíz cuadrada para determinar el número de LP tokens al agregar liquidez.

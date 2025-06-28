@@ -1,5 +1,0 @@
-
-Final Project Module 3: Implementation of SimpleSwap
-
-smart contract called SimpleSwap that allows adding and removing liquidity, exchanging tokens, obtaining prices, 
-and calculating amounts to be received, replicating the functionality of Uniswap without relying on its protocol.
