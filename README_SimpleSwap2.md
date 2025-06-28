@@ -1,18 +1,76 @@
-// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.19;
+/// @title SimpleSwap2 - Basic Token Swap and Liquidity Pool Contract
+/// @notice Allows users to add/remove liquidity and swap between two tokens
+/// @dev Issues ERC20 LP tokens representing liquidity shares
 
-/*It is a smart contract written in Solidity that allows:- 
-Adding liquidity to a pool of two ERC-20 tokens.- Withdrawing that liquidity.- 
-Swapping one token for another.- 
-Consulting prices and swap simulations before executing transactions.- 
-Issuing liquidity tokens (LP tokens) to represent the share in the pool.⚙ Main functions1. 
-addLiquidity2. removeLiquidity3. swapExactTokensForTokens4. getAmountOut5. getPrice*/
+contract SimpleSwap2 is ERC20 {
 
+    /// @dev Stores the reserves for a given token pair
+    struct Reserve {
+        uint256 reserveA;
+        uint256 reserveB;
+    }
 
-import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+    /// @notice Mapping of token pairs to their liquidity pools
+    mapping(address => mapping(address => Reserve)) public pools;
 
-/*This indicates that the SimpleSwap contract inherits from ERC20, which means that:The contract behaves like an ERC-20 token.It can issue and burn tokens (_mint, _burn),
- transfer them, have a name/symbol, etc.In this case, the ERC-20 tokens it issues represent the liquidity provided by users to the pool (as Uniswap does with LP tokens).*/
+    /// @notice Initializes the LP token with name and symbol
+    constructor() ERC20("Simple LP Token", "SLP") {}
+
+    /// @notice Adds liquidity to a token pair
+    /// @param tokenA Address of the first token
+    /// @param tokenB Address of the second token
+    /// @param amountADesired Desired amount of tokenA to deposit
+    /// @param amountBDesired Desired amount of tokenB to deposit
+    /// @param amountAMin Minimum acceptable amount of tokenA
+    /// @param amountBMin Minimum acceptable amount of tokenB
+    /// @param to Address to receive the LP tokens
+    /// @param deadline Latest timestamp for the transaction to be valid
+    /// @return amountA Actual amount of tokenA added
+    /// @return amountB Actual amount of tokenB added
+    /// @return liquidity Amount of LP tokens minted
+    function addLiquidity(...
+
+    /// @notice Removes liquidity from a token pair
+    /// @param tokenA Address of the first token
+    /// @param tokenB Address of the second token
+    /// @param liquidityAmount Amount of LP tokens to burn
+    /// @param amountAMin Minimum amount of tokenA to receive
+    /// @param amountBMin Minimum amount of tokenB to receive
+    /// @param to Address to receive the output tokens
+    /// @param deadline Latest timestamp for the transaction to be valid
+    /// @return amountA Amount of tokenA returned
+    /// @return amountB Amount of tokenB returned
+    function removeLiquidity(...
+
+    /// @notice Swaps a fixed amount of tokenIn for at least amountOutMin of tokenOut
+    /// @param tokenIn Address of the input token
+    /// @param tokenOut Address of the output token
+    /// @param amountIn Exact amount of tokenIn to swap
+    /// @param amountOutMin Minimum acceptable output of tokenOut
+    /// @param to Recipient of the tokenOut
+    /// @param deadline Latest timestamp for the transaction to be valid
+    /// @return amountOut Amount of tokenOut received
+    function swapExactTokensForTokens(...
+
+    /// @notice Returns the current price between two tokens
+    /// @param tokenA Address of the first token
+    /// @param tokenB Address of the second token
+    /// @return priceAtoB Price of 1 tokenA in terms of tokenB
+    /// @return priceBtoA Price of 1 tokenB in terms of tokenA
+    function getPrice(...
+
+    /// @notice Calculates the output amount for a given input
+    /// @param amountIn Input amount of tokens
+    /// @param tokenIn Address of the input token
+    /// @param tokenOut Address of the output token
+    /// @return amountOut Expected output amount based on reserves
+    function getAmountOut(...
+
+    /// @dev Computes the square root of a value using the Babylonian method
+    /// @param x Input value
+    /// @return y Approximate square root of x
+    function sqrt(...
+}
 
 contract SimpleSwap is ERC20 {
     //This structure defines the reserves of a pair of tokens:
