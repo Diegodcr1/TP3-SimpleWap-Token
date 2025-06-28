@@ -1,3 +1,9 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.27;
+
+import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
 /// @title SimpleSwap2 - Basic Token Swap and Liquidity Pool Contract
 /// @notice Allows users to add/remove liquidity and swap between two tokens
 /// @dev Issues ERC20 LP tokens representing liquidity shares
