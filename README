@@ -1,82 +1,80 @@
 
-🧩 ¿Qué hace SimpleSwap2?
-Es un contrato inteligente estilo DEX (exchange descentralizado) que permite:
+🖥️ Frontend Integration Guide: SimpleSwap2
+SimpleSwap2 is a lightweight decentralized exchange (DEX) smart contract that lets users:
 
-Agregar liquidez entre dos tokens ERC20.
+Add and remove liquidity between two ERC20 tokens
 
-Hacer swaps entre dos tokens.
+Swap one token for another
 
-Retirar liquidez y recibir los tokens originales.
+Mint and burn LP (liquidity provider) tokens as proof of pool ownership
 
-Consultar precios actuales y calcular cantidades estimadas de salida.
+Retrieve real-time price and swap estimates
 
-🔌 Interacciones Clave para el Frontend
-1. Agregar Liquidez (addLiquidity)
-Permite depositar dos tokens (A y B) y recibir un token LP representando la participación.
+💡 Key Contract Functions and How to Use Them
+1. addLiquidity(...)
+Adds tokenA and tokenB to the liquidity pool. Mints LP tokens to the user.
 
-Inputs esperados del usuario:
+Frontend Requirements:
 
-Montos deseados de tokenA y tokenB.
+Get input amounts from the user (amountADesired, amountBDesired)
 
-Mínimos aceptables (para proteger contra slippage).
+Ask for slippage tolerance (amountAMin, amountBMin)
 
-Dirección destino (to, normalmente el wallet del usuario).
+User must approve() both tokens beforehand
 
-Fecha límite (deadline en timestamp UNIX).
+Estimate deadline (e.g., Date.now() / 1000 + 1800)
 
-> 💡 Antes de llamar a addLiquidity, el usuario debe aprobar (approve) el contrato para mover sus tokens.
+Call .send({ from: userAddress }) on addLiquidity(...)
 
-2. Quitar Liquidez (removeLiquidity)
-Intercambia los tokens LP que el usuario posee por los tokens A y B subyacentes del pool.
+2. removeLiquidity(...)
+Burns LP tokens and returns corresponding amounts of tokenA and tokenB.
 
-Inputs esperados:
+Frontend Flow:
 
-Par de tokens (tokenA y tokenB).
+Input: liquidityAmount, slippage mins, to, deadline
 
-Cantidad de tokens LP que quiere quemar.
+Use balanceOf() to fetch user LP balance
 
-Mínimos aceptables de retiro.
+Requires LP approve() if handled through a frontend
 
-Dirección receptora.
+Returns amountA and amountB withdrawn
 
-deadline.
+3. swapExactTokensForTokens(...)
+Swaps a fixed amount of tokenIn for the maximum possible of tokenOut.
 
-> 💡 También requiere aprobación previa si el frontend gestiona los LP tokens.
+Frontend Flow:
 
-3. Hacer un Swap (swapExactTokensForTokens)
-Permite cambiar una cantidad fija de un token por la mejor cantidad posible del otro, controlando slippage.
+Inputs: tokenIn, tokenOut, amountIn, amountOutMin, to, deadline
 
-Inputs clave:
+Use getAmountOut(...) to calculate and preview expected output
 
-tokenIn y tokenOut.
+Ensure approve() is called for tokenIn
 
-amountIn: cuánto desea intercambiar.
+Displays final received amount upon success
 
-amountOutMin: mínimo que acepta recibir.
+4. getAmountOut(...)
+Returns the output estimate of a swap without executing it.
 
-to: dirección que recibirá el tokenOut.
+Frontend Use:
 
-deadline.
+Useful for live estimates during user input
 
-> 💡 El frontend debe mostrar estimaciones y confirmar con el usuario antes de enviar la transacción.
+Recalculates on input change (amount or token pair)
 
-4. Consultar Precios (getPrice)
-Calcula el valor relativo entre dos tokens según sus reservas.
+Supports building slippage calculators
 
-🟢 Ideal para:
+5. getPrice(...)
+Returns real-time price data between tokenA and tokenB, both directions.
 
-Mostrar en el frontend antes de un swap.
+Frontend Use Cases:
 
-Hacer gráficos o informes de tasa de cambio.
+Display current exchange rate on liquidity and swap pages
 
-5. Simular Swap (getAmountOut)
-Devuelve la cantidad estimada de salida para un amountIn sin ejecutar un swap real.
+Graph token prices over time (if queried historically off-chain)
 
-🟢 Ideal para:
+🔐 Behind the Scenes
+sqrt(...): Internal method used to determine how many LP tokens to mint
 
-Previsualizar los resultados de un swap sin costo de gas.
+Token sorting (tokenX, tokenY) ensures pools are indexed consistently
 
-Calcular slippage en tiempo real.
-
-🔐 Funciones Internas
-sqrt: calcula la raíz cuadrada para determinar el número de LP tokens al agregar liquidez.
+Liquidity share is based on the geometric mean of token amounts deposited
