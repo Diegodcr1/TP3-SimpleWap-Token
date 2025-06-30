@@ -2,169 +2,115 @@
 pragma solidity ^0.8.27;
 
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
 
 contract SimpleSwap2 is ERC20 {
-    struct Reserve {
-        uint256 reserveA;
-        uint256 reserveB;
-    }
-
-    mapping(address => mapping(address => Reserve)) public pools;
-
-    constructor() ERC20("Simple LP Token", "SLP") {} 
+    
+    constructor() ERC20("Token", "tk") {} 
 
     function addLiquidity(
         address tokenA,
         address tokenB,
-        uint256 amountADesired,
-        uint256 amountBDesired,
-        uint256 amountAMin,
-        uint256 amountBMin,
+        uint amountADesired,
+        uint amountBDesired,
+        uint amountAMin,
+        uint amountBMin,
         address to,
-        uint256 deadline
-    ) external returns (uint256 amountA, uint256 amountB, uint256 liquidity) {
-        require(block.timestamp <= deadline, "Expired");
-
-        (address tokenX, address tokenY) = tokenA < tokenB ? (tokenA, tokenB) : (tokenB, tokenA);
-        Reserve storage pool = pools[tokenX][tokenY];
-
-        if (pool.reserveA == 0 && pool.reserveB == 0) {
-            amountA = amountADesired;
-            amountB = amountBDesired;
-        } else {
-            uint256 optimalB = (amountADesired * pool.reserveB) / pool.reserveA;
-            if (optimalB <= amountBDesired) {
+        uint deadline
+    ) external returns (uint amountA, uint amountB, uint liquidity) {
+        require(deadline  >=  block.timestamp, "Expired");
+        liquidity=totalSupply();
+    
+       if (liquidity>0) {
+                uint256 optimalA=(amountADesired * liquidity) /  ERC20(tokenA).balanceOf(address(this));
+                uint256 optimalB=(amountBDesired * liquidity) / ERC20(tokenB).balanceOf(address(this));
+        
+            if (optimalA < optimalB) {
                 amountA = amountADesired;
-                amountB = optimalB;
+                amountB = getPrice(tokenA, tokenB) * amountA;
             } else {
                 amountB = amountBDesired;
-                amountA = (amountBDesired * pool.reserveA) / pool.reserveB;
+                amountA = getPrice(tokenB, tokenA) * amountB;
             }
-        }
+            } else {
+                liquidity=amountADesired;
+                 amountA=amountADesired;
+                 amountB=amountBDesired;
 
-      require(amountA >= amountAMin && amountB >= amountBMin, "Slippage too high");
-     
-        ERC20(tokenA).transferFrom(msg.sender, address(this), amountA);
-        ERC20(tokenB).transferFrom(msg.sender, address(this), amountB);
+            }
 
-        pool.reserveA += amountA;
-        pool.reserveB += amountB;
-
-        liquidity = sqrt(amountA * amountB);
-        _mint(to, liquidity);
+            require(amountAMin<=amountA);
+            require(amountBMin<=amountB);
+            ERC20(tokenA).transferFrom(msg.sender, address(this), amountA);
+            ERC20(tokenB).transferFrom(msg.sender, address(this), amountB);
+             _mint(to, liquidity);
     }
-
+        
     function removeLiquidity(
         address tokenA,
         address tokenB,
-        uint256 liquidityAmount,
-        uint256 amountAMin,
-        uint256 amountBMin,
+        uint liquidity,
+        uint amountAMin,
+        uint amountBMin,
         address to,
-        uint256 deadline
-    ) external returns (uint256 amountA, uint256 amountB) {
-        require(block.timestamp <= deadline, "Expired");
+        uint deadline
+    ) external returns (uint amountA, uint amountB) {
+        require( deadline >= block.timestamp, "Expired");
+        uint256 totalLPliquidity = totalSupply();
 
-        (address tokenX, address tokenY) = tokenA < tokenB ? (tokenA, tokenB) : (tokenB, tokenA);
-        Reserve storage pool = pools[tokenX][tokenY];
+        amountA = liquidity * ERC20(tokenA).balanceOf(address(this))/totalLPliquidity;
+        amountB = liquidity * ERC20(tokenB).balanceOf(address(this))/totalLPliquidity;
 
-        uint256 totalLPSupply = totalSupply();
-        require(liquidityAmount > 0 && balanceOf(msg.sender) >= liquidityAmount, "Insufficient liquidity");
+        require(amountAMin<=amountA);
+        require(amountBMin<=amountB);
 
-        amountA = (liquidityAmount * pool.reserveA) / totalLPSupply;
-        amountB = (liquidityAmount * pool.reserveB) / totalLPSupply;
-
-        require(amountA >= amountAMin && amountB >= amountBMin, "Slippage too high");
-
-        _burn(msg.sender, liquidityAmount);
-
-        pool.reserveA -= amountA;
-        pool.reserveB -= amountB;
-
+        _burn(msg.sender, liquidity);
         ERC20(tokenA).transfer(to, amountA);
         ERC20(tokenB).transfer(to, amountB);
+      
     }
 
     function swapExactTokensForTokens(
-        address tokenIn,
-        address tokenOut,
-        uint256 amountIn,
-        uint256 amountOutMin,
+       
+        uint amountIn,
+        uint amountOutMin,
+        address[] calldata path,
         address to,
-        uint256 deadline
-    ) external returns (uint256 amountOut) {
-        require(block.timestamp <= deadline, "Expired");
-        require(tokenIn != tokenOut, "Invalid token pair");
+        uint deadline
+    ) external returns (uint[] memory amounts) {
+        require(deadline  >= block.timestamp, "Expired");
 
-        (address tokenX, address tokenY) = tokenIn < tokenOut ? (tokenIn, tokenOut) : (tokenOut, tokenIn);
-        Reserve storage pool = pools[tokenX][tokenY];
-        require(pool.reserveA > 0 && pool.reserveB > 0, "Empty pool");
+        ERC20 tokenA= ERC20(path[0]);
+        ERC20 tokenB= ERC20(path[1]);
+       
 
-        (uint256 reserveIn, uint256 reserveOut) = tokenIn < tokenOut
-            ? (pool.reserveA, pool.reserveB)
-            : (pool.reserveB, pool.reserveA);
-
-        amountOut = (amountIn * reserveOut) / (reserveIn + amountIn);
+        uint256 amountOut = amountIn * tokenB.balanceOf(address(this)) / (amountIn+tokenA.balanceOf(address(this)));
 
         require(amountOut >= amountOutMin, "Insufficient output amount");
 
-        ERC20(tokenIn).transferFrom(msg.sender, address(this), amountIn);
-        ERC20(tokenOut).transfer(to, amountOut);
+        tokenA.transferFrom(msg.sender, address(this), amountIn);
+        tokenB.transfer(to, amountOut);
 
-        if (tokenIn < tokenOut) {
-            pool.reserveA += amountIn;
-            pool.reserveB -= amountOut;
-        } else {
-            pool.reserveB += amountIn;
-            pool.reserveA -= amountOut;
-        }
+        amounts=new uint[](2);
+         amounts[0]=amountIn;
+         amounts[1]=amountOut;
     }
 
     function getPrice(
         address tokenA,
         address tokenB
-    ) public view returns (uint256 priceAtoB, uint256 priceBtoA) {
-        require(tokenA != tokenB, "Invalid pair");
-
-        (address tokenX, address tokenY) = tokenA < tokenB ? (tokenA, tokenB) : (tokenB, tokenA);
-        Reserve storage pool = pools[tokenX][tokenY];
-        require(pool.reserveA > 0 && pool.reserveB > 0, "Empty pool");
-
-        if (tokenA < tokenB) {
-            priceAtoB = (pool.reserveB * 1e18) / pool.reserveA;
-            priceBtoA = (pool.reserveA * 1e18) / pool.reserveB;
-        } else {
-            priceAtoB = (pool.reserveA * 1e18) / pool.reserveB;
-            priceBtoA = (pool.reserveB * 1e18) / pool.reserveA;
-        }
+    ) public view returns (uint price) {
+       
+         uint256 amount1= ERC20(tokenA).balanceOf(address(this));
+         uint256 amount2= ERC20(tokenB).balanceOf(address(this));
+         return (amount2*1e18)/amount1;
+        
     }
  
-    function getAmountOut(
-        uint256 amountIn,
-        address tokenIn,
-        address tokenOut
-    ) public view returns (uint256 amountOut) {
-        require(tokenIn != tokenOut, "Invalid pair");
-
-        (address tokenX, address tokenY) = tokenIn < tokenOut ? (tokenIn, tokenOut) : (tokenOut, tokenIn);
-        Reserve storage pool = pools[tokenX][tokenY];
-        require(pool.reserveA > 0 && pool.reserveB > 0, "Empty pool");
-
-        (uint256 reserveIn, uint256 reserveOut) = tokenIn < tokenOut
-            ? (pool.reserveA, pool.reserveB)
-            : (pool.reserveB, pool.reserveA);
-
-        amountOut = (amountIn * reserveOut) / (reserveIn + amountIn);
+    function getAmountOut(uint amountIn, uint reserveIn, uint reserveOut) 
+                    external pure returns (uint amountOut ) 
+    {
+              amountOut=amountIn*reserveOut/(amountIn+reserveIn);
     }
-
-    function sqrt(uint256 x) internal pure returns (uint256 y) {
-        if (x == 0) return 0;
-        uint256 z = (x + 1) / 2;
-        y = x;
-        while (z < y) {
-            y = z;
-            z = (x / z + z) / 2;
-        }
-    }
+   
 }
