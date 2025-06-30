@@ -1,80 +1,38 @@
+📝 SimpleSwap2
 
-🖥️ Frontend Integration Guide: SimpleSwap2
-SimpleSwap2 is a lightweight decentralized exchange (DEX) smart contract that lets users:
+Overview
 
-Add and remove liquidity between two ERC20 tokens
+SimpleSwap2 is a smart contract implemented on Solidity that allows users to trade two ERC-20 tokens and provide liquidity to receive LP tokens. 
+This contract mimics a Uniswap V1-type automated exchange (AMM) model, with some simplifications.
 
-Swap one token for another
+⚙️ What does the contract do?
 
-Mint and burn LP (liquidity provider) tokens as proof of pool ownership
+It allows users to:
 
-Retrieve real-time price and swap estimates
+Add and withdraw liquidity from a pool composed of two ERC-20 tokens.
+Exchange one token for another using a constant product formula (x * y = k).
+Receive LP tokens as a representation of their participation in liquidity.
+Calculate the relative prices between two tokens.
+Provides output estimates for swaps using the contract's reserves.
 
-💡 Key Contract Functions and How to Use Them
-1. addLiquidity(...)
-Adds tokenA and tokenB to the liquidity pool. Mints LP tokens to the user.
+🛠️ How does it do it?
 
-Frontend Requirements:
+Use the Automated Market Maker (AMM) model without the need for an order book.
+When adding initial liquidity, the inter-token ratio is set as the base of the pool.
+In swaps, the expected output amount is calculated with:
 
-Get input amounts from the user (amountADesired, amountBDesired)
+solidity
+amountOut = (amountIn * reserveOut) / (amountIn + reserveIn)
+Slippage is controlled using minimum parameters (amountAMin, amountOutMin, etc.).
 
-Ask for slippage tolerance (amountAMin, amountBMin)
+There is no swap fee charged by default (but it could easily be extended).
 
-User must approve() both tokens beforehand
+📚 Features and Interfaces
 
-Estimate deadline (e.g., Date.now() / 1000 + 1800)
+Function	Description	Entrance	Exit
 
-Call .send({ from: userAddress }) on addLiquidity(...)
-
-2. removeLiquidity(...)
-Burns LP tokens and returns corresponding amounts of tokenA and tokenB.
-
-Frontend Flow:
-
-Input: liquidityAmount, slippage mins, to, deadline
-
-Use balanceOf() to fetch user LP balance
-
-Requires LP approve() if handled through a frontend
-
-Returns amountA and amountB withdrawn
-
-3. swapExactTokensForTokens(...)
-Swaps a fixed amount of tokenIn for the maximum possible of tokenOut.
-
-Frontend Flow:
-
-Inputs: tokenIn, tokenOut, amountIn, amountOutMin, to, deadline
-
-Use getAmountOut(...) to calculate and preview expected output
-
-Ensure approve() is called for tokenIn
-
-Displays final received amount upon success
-
-4. getAmountOut(...)
-Returns the output estimate of a swap without executing it.
-
-Frontend Use:
-
-Useful for live estimates during user input
-
-Recalculates on input change (amount or token pair)
-
-Supports building slippage calculators
-
-5. getPrice(...)
-Returns real-time price data between tokenA and tokenB, both directions.
-
-Frontend Use Cases:
-
-Display current exchange rate on liquidity and swap pages
-
-Graph token prices over time (if queried historically off-chain)
-
-🔐 Behind the Scenes
-sqrt(...): Internal method used to determine how many LP tokens to mint
-
-Token sorting (tokenX, tokenY) ensures pools are indexed consistently
-
-Liquidity share is based on the geometric mean of token amounts deposited
+addLiquidity(...)	It adds two-token liquidity to the pool.	tokenA, tokenB, desired and minimum amounts, receiving address, deadline	amountA, amountB, liquidity
+removeLiquidity(...)	Withdraw liquidity and proportionally return A and B tokens.	tokenA, tokenB, number of LP tokens, minimums, recipient, deadline	amountA, amountB
+swapExactTokensForTokens(...)	Exchange an exact amount of token A for the largest possible amount of token B.	amountIn, amountOutMin, path, destino, deadline	amounts (input y output)
+getPrice(...)	It returns the relative price between two tokens.	Tokena, Tokenb	price
+getAmountOut(...)	Estimates the outcome of a given swap , and .amountInreserveInreserveOut	amountIn, reserveIn, reserveOut	amountOut
