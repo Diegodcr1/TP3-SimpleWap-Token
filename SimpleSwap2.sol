@@ -1,35 +1,30 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.27;
 
-
-/// @title SimpleSwap2
-/// @author [Diego]
-/// @notice Permite intercambios entre dos tokens ERC20 y manejo de liquidez.
-/// @dev Inspirado en AMM tipo Uniswap v1 sin comisiones de intercambio.
-
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
- 
+/// @title SimpleSwap2
+/// @author Diego
+/// @notice AMM contract that enables swaps between two ERC20 tokens and liquidity management.
+/// @dev Inspired by Uniswap . No swap fees and supports only one token pair.
 
 contract SimpleSwap2 is ERC20 {
 
-    /// @notice Crea el token LP con nombre "Token" y símbolo "tk".
+    /// @notice Deploys the LP token with name "Token" and symbol "tk".
+    constructor() ERC20("Token", "tk") {}
 
-    constructor() ERC20("Token", "tk") {} 
-
-     /// @notice Agrega liquidez al pool usando dos tokens ERC20.
-    /// @param tokenA Dirección del token A.
-    /// @param tokenB Dirección del token B.
-    /// @param amountADesired Monto deseado del token A.
-    /// @param amountBDesired Monto deseado del token B.
-    /// @param amountAMin Monto mínimo aceptable del token A.
-    /// @param amountBMin Monto mínimo aceptable del token B.
-    /// @param to Dirección que recibirá los tokens LP.
-    /// @param deadline Fecha límite para ejecutar la transacción.
-    /// @return amountA Monto real usado del token A.
-    /// @return amountB Monto real usado del token B.
-    /// @return liquidity Tokens LP acuñados.
-
+    /// @notice Adds liquidity to the pool using two ERC20 tokens.
+    /// @param tokenA Address of the first token.
+    /// @param tokenB Address of the second token.
+    /// @param amountADesired Desired amount of token A to deposit.
+    /// @param amountBDesired Desired amount of token B to deposit.
+    /// @param amountAMin Minimum acceptable amount of token A to prevent slippage.
+    /// @param amountBMin Minimum acceptable amount of token B to prevent slippage.
+    /// @param to Address that will receive the LP tokens.
+    /// @param deadline Timestamp by which the transaction must be executed.
+    /// @return amountA Actual amount used of token A.
+    /// @return amountB Actual amount used of token B.
+    /// @return liquidity Amount of LP tokens minted.
     function addLiquidity(
         address tokenA,
         address tokenB,
@@ -40,45 +35,44 @@ contract SimpleSwap2 is ERC20 {
         address to,
         uint deadline
     ) external returns (uint amountA, uint amountB, uint liquidity) {
-        require(deadline  >=  block.timestamp, "Expired");
-        liquidity=totalSupply();
-    
-       if (liquidity>0) {
-                uint256 optimalA=(amountADesired * liquidity) /  ERC20(tokenA).balanceOf(address(this));
-                uint256 optimalB=(amountBDesired * liquidity) / ERC20(tokenB).balanceOf(address(this));
-        
+        require(deadline >= block.timestamp, "Expired");
+        liquidity = totalSupply();
+
+        if (liquidity > 0) {
+            uint256 optimalA = (amountADesired * liquidity) / ERC20(tokenA).balanceOf(address(this));
+            uint256 optimalB = (amountBDesired * liquidity) / ERC20(tokenB).balanceOf(address(this));
+
             if (optimalA < optimalB) {
                 amountA = amountADesired;
-                amountB = getPrice(tokenA, tokenB) * amountA;
+                amountB = (getPrice(tokenA, tokenB) * amountA) / 1e18;
             } else {
                 amountB = amountBDesired;
-                amountA = getPrice(tokenB, tokenA) * amountB;
+                amountA = (getPrice(tokenB, tokenA) * amountB) / 1e18;
             }
-            } else {
-                liquidity=amountADesired;
-                 amountA=amountADesired;
-                 amountB=amountBDesired;
+        } else {
+            amountA = amountADesired;
+            amountB = amountBDesired;
+            liquidity = amountADesired;
+        }
 
-            }
+        require(amountA >= amountAMin, "Insufficient A");
+        require(amountB >= amountBMin, "Insufficient B");
 
-            require(amountAMin<=amountA);
-            require(amountBMin<=amountB);
-            ERC20(tokenA).transferFrom(msg.sender, address(this), amountA);
-            ERC20(tokenB).transferFrom(msg.sender, address(this), amountB);
-             _mint(to, liquidity);
+        ERC20(tokenA).transferFrom(msg.sender, address(this), amountA);
+        ERC20(tokenB).transferFrom(msg.sender, address(this), amountB);
+        _mint(to, liquidity);
     }
 
-     /// @notice Retira liquidez del pool y devuelve los tokens proporcionales.
-    /// @param tokenA Dirección del token A.
-    /// @param tokenB Dirección del token B.
-    /// @param liquidity Cantidad de tokens LP a quemar.
-    /// @param amountAMin Monto mínimo aceptable del token A.
-    /// @param amountBMin Monto mínimo aceptable del token B.
-    /// @param to Dirección que recibirá los tokens subyacentes.
-    /// @param deadline Fecha límite para ejecutar la transacción.
-    /// @return amountA Monto transferido de token A.
-    /// @return amountB Monto transferido de token B.
-
+    /// @notice Removes liquidity from the pool and returns the proportional tokens.
+    /// @param tokenA Address of the first token.
+    /// @param tokenB Address of the second token.
+    /// @param liquidity Amount of LP tokens to burn.
+    /// @param amountAMin Minimum acceptable amount of token A to receive.
+    /// @param amountBMin Minimum acceptable amount of token B to receive.
+    /// @param to Address that will receive the underlying tokens.
+    /// @param deadline Timestamp by which the transaction must be executed.
+    /// @return amountA Transferred amount of token A.
+    /// @return amountB Transferred amount of token B.
     function removeLiquidity(
         address tokenA,
         address tokenB,
@@ -88,81 +82,73 @@ contract SimpleSwap2 is ERC20 {
         address to,
         uint deadline
     ) external returns (uint amountA, uint amountB) {
-        require( deadline >= block.timestamp, "Expired");
-        uint256 totalLPliquidity = totalSupply();
+        require(deadline >= block.timestamp, "Expired");
 
-        amountA = liquidity * ERC20(tokenA).balanceOf(address(this))/totalLPliquidity;
-        amountB = liquidity * ERC20(tokenB).balanceOf(address(this))/totalLPliquidity;
+        uint256 totalLP = totalSupply();
+        amountA = liquidity * ERC20(tokenA).balanceOf(address(this)) / totalLP;
+        amountB = liquidity * ERC20(tokenB).balanceOf(address(this)) / totalLP;
 
-        require(amountAMin<=amountA);
-        require(amountBMin<=amountB);
+        require(amountA >= amountAMin, "Insufficient A");
+        require(amountB >= amountBMin, "Insufficient B");
 
         _burn(msg.sender, liquidity);
         ERC20(tokenA).transfer(to, amountA);
         ERC20(tokenB).transfer(to, amountB);
-      
     }
 
-      /// @notice Intercambia una cantidad fija de un token por otro.
-    /// @param amountIn Cantidad de tokens de entrada.
-    /// @param amountOutMin Cantidad mínima de salida aceptable.
-    /// @param path Dirección del token de entrada y salida. Debe tener longitud 2.
-    /// @param to Dirección de destino para los tokens de salida.
-    /// @param deadline Fecha límite para ejecutar el swap.
-    /// @return amounts Array con la cantidad de entrada y la cantidad de salida.
-
+    /// @notice Swaps an exact amount of one token for another based on reserves.
+    /// @param amountIn Amount of input tokens.
+    /// @param amountOutMin Minimum acceptable amount of output tokens.
+    /// @param path Array with input and output token addresses (length must be 2).
+    /// @param to Address to receive the output tokens.
+    /// @param deadline Timestamp by which the swap must occur.
+    /// @return amounts Array with input and output amounts used in the swap.
     function swapExactTokensForTokens(
-       
         uint amountIn,
         uint amountOutMin,
         address[] calldata path,
         address to,
         uint deadline
     ) external returns (uint[] memory amounts) {
-        require(deadline  >= block.timestamp, "Expired");
+        require(deadline >= block.timestamp, "Expired");
+        require(path.length == 2, "Invalid path");
 
-        ERC20 tokenA= ERC20(path[0]);
-        ERC20 tokenB= ERC20(path[1]);
-       
+        ERC20 tokenA = ERC20(path[0]);
+        ERC20 tokenB = ERC20(path[1]);
 
-        uint256 amountOut = amountIn * tokenB.balanceOf(address(this)) / (amountIn+tokenA.balanceOf(address(this)));
+        uint reserveA = tokenA.balanceOf(address(this));
+        uint reserveB = tokenB.balanceOf(address(this));
 
-        require(amountOut >= amountOutMin, "Insufficient output amount");
+        uint amountOut = amountIn * reserveB / (amountIn + reserveA);
+        require(amountOut >= amountOutMin, "Insufficient output");
 
         tokenA.transferFrom(msg.sender, address(this), amountIn);
         tokenB.transfer(to, amountOut);
 
-        amounts=new uint[](2);
-         amounts[0]=amountIn;
-         amounts[1]=amountOut;
+        amounts = new uint[](2);
+        amounts[0] = amountIn;
+        amounts[1] = amountOut;
     }
 
-     /// @notice Consulta el precio relativo entre dos tokens según el pool.
-    /// @param tokenA Dirección del token base.
-    /// @param tokenB Dirección del token de cotización.
-    /// @return price Precio de tokenA en términos de tokenB, con 18 decimales.
-
-    function getPrice(
-        address tokenA,
-        address tokenB
-    ) public view returns (uint price) {
-       
-         uint256 amount1= ERC20(tokenA).balanceOf(address(this));
-         uint256 amount2= ERC20(tokenB).balanceOf(address(this));
-         return (amount2*1e18)/amount1;
-        
+    /// @notice Returns the price of one token in terms of another with 18 decimals.
+    /// @param tokenA Base token address.
+    /// @param tokenB Quote token address.
+    /// @return price Price of tokenA in terms of tokenB (18 decimals).
+    function getPrice(address tokenA, address tokenB) public view returns (uint price) {
+        uint amount1 = ERC20(tokenA).balanceOf(address(this));
+        uint amount2 = ERC20(tokenB).balanceOf(address(this));
+        require(amount1 > 0, "Zero reserve");
+        price = (amount2 * 1e18) / amount1;
     }
 
-    /// @notice Calcula la cantidad de salida estimada usando el producto constante.
-    /// @param amountIn Monto del token de entrada.
-    /// @param reserveIn Reserva actual del token de entrada.
-    /// @param reserveOut Reserva actual del token de salida.
-    /// @return amountOut Estimación del token de salida.
-
-    function getAmountOut(uint amountIn, uint reserveIn, uint reserveOut) 
-                    external pure returns (uint amountOut ) 
-    {
-              amountOut=amountIn*reserveOut/(amountIn+reserveIn);
-    }
-   
-}
+    /// @notice Estimates output amount using constant product formula.
+    /// @param amountIn Input token amount.
+    /// @param reserveIn Reserve of input token.
+    /// @param reserveOut Reserve of output token.
+    /// @return amountOut Estimated output token amount.
+    function getAmountOut(
+        uint amountIn,
+        uint reserveIn,
+        uint reserveOut
+    ) external pure returns (uint amountOut) {
+        amountOut = amountIn * reserveOut / (amountIn + reserve
