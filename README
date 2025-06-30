@@ -29,10 +29,32 @@ There is no swap fee charged by default (but it could easily be extended).
 
 📚 Features and Interfaces
 
-Function	Description	Entrance	Exit
+Function: addLiquidity	 
+Description: It adds two-token liquidity to the pool.           
+Entrance: tokenA, tokenB, desired and minimum amounts, receiving address, deadline	 
+Exit: amountA, amountB, liquidity
 
-addLiquidity(...)	It adds two-token liquidity to the pool.	tokenA, tokenB, desired and minimum amounts, receiving address, deadline	amountA, amountB, liquidity
-removeLiquidity(...)	Withdraw liquidity and proportionally return A and B tokens.	tokenA, tokenB, number of LP tokens, minimums, recipient, deadline	amountA, amountB
-swapExactTokensForTokens(...)	Exchange an exact amount of token A for the largest possible amount of token B.	amountIn, amountOutMin, path, destino, deadline	amounts (input y output)
-getPrice(...)	It returns the relative price between two tokens.	Tokena, Tokenb	price
-getAmountOut(...)	Estimates the outcome of a given swap , and .amountInreserveInreserveOut	amountIn, reserveIn, reserveOut	amountOut
+
+Function: removeLiquidity        
+Description: Withdraw liquidity and proportionally return A and B tokens.	  
+Entrance:Entrance	tokenA, tokenB, number of LP tokens, minimums, recipient, deadline	
+Exit: amountA, amountB
+
+
+Function: swapExactTokensForTokens
+Description: Exchange an exact amount of token A for the largest possible amount of token B.	
+Entrance: amountIn, amountOutMin, path, destino, deadline	
+Exit: amounts (input y output)
+
+
+Function: getPrice	
+Description: It returns the relative price between two tokens.	
+Entrance: Tokena, Tokenb
+Exit: price
+
+
+
+Function: getAmountOut	
+Description: Estimates the outcome of a given swap , and .amountInreserveInreserveOut
+Entrance: amountIn, reserveIn, reserveOut
+Exit: amountOut
