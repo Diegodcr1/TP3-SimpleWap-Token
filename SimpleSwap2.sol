@@ -151,3 +151,4 @@ contract SimpleSwap2 is ERC20 {
     {
               amountOut=amountIn*reserveOut/(amountIn+reserveIn);
     }
+}
