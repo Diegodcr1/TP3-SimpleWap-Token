@@ -146,9 +146,8 @@ contract SimpleSwap2 is ERC20 {
     /// @param reserveIn Reserve of input token.
     /// @param reserveOut Reserve of output token.
     /// @return amountOut Estimated output token amount.
-    function getAmountOut(
-        uint amountIn,
-        uint reserveIn,
-        uint reserveOut
-    ) external pure returns (uint amountOut) {
-        amountOut = amountIn * reserveOut / (amountIn + reserve
+   function getAmountOut(uint amountIn, uint reserveIn, uint reserveOut) 
+                    external pure returns (uint amountOut ) 
+    {
+              amountOut=amountIn*reserveOut/(amountIn+reserveIn);
+    }
