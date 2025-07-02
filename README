@@ -3,7 +3,7 @@
 Overview
 
 SimpleSwap2 is a smart contract implemented on Solidity that allows users to trade two ERC-20 tokens and provide liquidity to receive LP tokens. 
-This contract mimics a Uniswap V1-type automated exchange (AMM) model, with some simplifications.
+This contract mimics a Uniswap V-type automated exchange (AMM) model, with some simplifications.
 
 ⚙️ What does the contract do?
 
